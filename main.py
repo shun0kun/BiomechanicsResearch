@@ -1,3 +1,2 @@
-import sys
-
-print(sys.path)
+s = "aiueo"
+print(range(s))
