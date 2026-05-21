@@ -31,7 +31,6 @@ class Hop:
 			x = self.vgrf[j] + (phase_target[i] - phase_origin[j]) * (self.vgrf[j + 1] - self.vgrf[j]) / (phase_origin[j + 1] - phase_origin[j])
 			self.vgrf_norm.append(x)
 			i += 1
-			
 
 class HoppingAnalysis:
 	def __init__(self, filepath: str) -> None:
@@ -43,7 +42,7 @@ class HoppingAnalysis:
 	def _extract_hops(self) -> None:
 		TIME_COL = 0
 		VGRF_COL = 23
-		THRESHOLD = 10
+		THRESHOLD = 40
 		time = []
 		vgrf = []
 		filtered_vgrf = []
@@ -72,12 +71,12 @@ class HoppingAnalysis:
 		while i < n:
 			while i < n and filtered_vgrf[i] == 0:
 				i += 1
-			left = i
+			left = i - 1
 			while i < n and filtered_vgrf[i] > 0:
 				i += 1
 			right = i
 			if left != right:
-				self.hops.append(Hop(time[left:right], filtered_vgrf[left:right]))
+				self.hops.append(Hop(time[left:right + 1], filtered_vgrf[left:right + 1]))
 
 	def save_hops_plots(self, output_path: str = "F-t.png") -> None:
 		plt.figure()

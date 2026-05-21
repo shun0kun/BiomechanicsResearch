@@ -1,4 +1,3 @@
-from HoppinfAnalysis import HoppingAnalysis
+from hopping_analysis import HoppingAnalysis
 
 h = HoppingAnalysis("../data/inplace_PF.csv")
-h.save_hops_plots("../figures/F-t.png")
