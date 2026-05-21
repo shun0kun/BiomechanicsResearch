@@ -1,7 +1,7 @@
 import csv
 import matplotlib.pyplot as plt
-import utils
-from Hop import Hop
+from . import utils
+from .Hop import Hop
 
 class HoppingAnalysis:
 	def __init__(self, filepath: str, massdata: int | float | str | None = None) -> None:
@@ -19,7 +19,7 @@ class HoppingAnalysis:
 		if massdata is None:
 			return utils.estimate_mass_from_csv(self.filepath)
 		raise TypeError("massdata must be int, float, str, or None")
-	
+
 	def _load_hopping_data(self) -> tuple[list[float], list[float]]:
 		time = []
 		vgrf = []
@@ -49,15 +49,21 @@ class HoppingAnalysis:
 				break
 			filtered_vgrf[i] = 0.0
 		return filtered_vgrf
-	
+
 	def _extract_hops(self) -> list[Hop]:
 		hops = []
-		for i in range(len(self.filtered_vgrf)):
-			
-
+		is_contact = False
+		left = 0
+		for i in range(len(self.filtered_vgrf) - 1):
+			if not is_contact and self.filtered_vgrf[i + 1] > 0.0:
+				is_contact = True
+				left = i
+			elif is_contact and self.filtered_vgrf[i + 1] == 0.0:
+				is_contact = False
+				right = i + 1
+				hops.append(Hop(self.mass, self.time[left:right + 1], self.filtered_vgrf[left:right + 1]))
+		return hops
 
 	def analyze(self, outdir: str = "") -> None:
 		plt.figure()
 		plt.close()
-
-

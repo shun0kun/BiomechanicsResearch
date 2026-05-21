@@ -67,6 +67,7 @@ class HoppingAnalysis:
 		while i >= 0 and filtered_vgrf[i] > 0:
 			filtered_vgrf[i] = 0
 			i -= 1
+
 		i = 0
 		while i < n:
 			while i < n and filtered_vgrf[i] == 0:
