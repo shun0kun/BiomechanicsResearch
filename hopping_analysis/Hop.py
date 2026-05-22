@@ -1,4 +1,5 @@
 import numpy
+import matplotlib.pyplot as plt
 from . import utils
 
 G = 9.81
@@ -62,3 +63,23 @@ class Hop:
 
 	def _compute_vstiffness(self) -> float:
 		return self.mass * (2 * numpy.pi * self.freq) ** 2.0
+	
+	def fx_fig(self, path: str) -> None:
+		bw = self.mass * G
+		plt.figure()
+		plt.plot(self.vdisp_norm, [x / bw for x in self.vgrf_norm])
+		plt.xlabel("Vertical Displacement [m]")
+		plt.ylabel("vGRF [BW]")
+		plt.title("F-x")
+		plt.savefig(path, dpi=300)
+		plt.close()
+	
+	def ft_fig(self, path: str) -> None:
+		plt.figure()
+		bw = self.mass * G
+		plt.plot([x * 100 for x in self.time_norm], [x / bw for x in self.vgrf_norm])
+		plt.xlabel("Stance Phase [m]")
+		plt.ylabel("vGRF [BW]")
+		plt.title("F-t")
+		plt.savefig(path, dpi=300)
+		plt.close()

@@ -13,6 +13,7 @@ class HoppingAnalysis:
 		self.time, self.vgrf = self._load_hopping_data()
 		self.filtered_vgrf = self._filter_vgrf()
 		self.hops = self._extract_hops()
+		self.n_hops = len(self.hops)
 
 	def _resolve_mass(self, massdata: int | float | str | None) -> float:
 		if isinstance(massdata, (int, float)):
@@ -73,35 +74,44 @@ class HoppingAnalysis:
 		os.makedirs(outdir, exist_ok = True) # ""や"."のときはどうなる？
 
 		plt.figure()
-		plt.plot(self.time, self.vgrf)
+		plt.plot(self.time, self.vgrf, color="black", alpha=1.0, linewidth=1.0)
 		plt.xlabel("Time [s]")
 		plt.ylabel("vGRF [N]")
 		plt.title("Vertical GRF")
-		plt.savefig(outdir + "vertical_GRF.png")
+		plt.savefig(outdir + "vgrf.png", dpi=300)
 		plt.close()
 
 		plt.figure()
-		plt.plot(self.time, self.filtered_vgrf)
+		plt.plot(self.time, self.filtered_vgrf, color="black", alpha=1.0, linewidth=1.0)
 		plt.xlabel("Time [s]")
 		plt.ylabel("vGRF [N]")
 		plt.title("Vertical GRF (filtered)")
-		plt.savefig(outdir + "filtered_vertical_GRF.png")
+		plt.savefig(outdir + "filtered_vgrf.png", dpi=300)
+		plt.close()
+
+		bw = self.mass * G
+		phase = [x * 100 for x in self.hops[0].time_norm]
+		vgrf_mean = [sum(h.vgrf_norm[i] for h in self.hops) / self.n_hops for i in range(len(phase))]
+		vdisp_mean = [sum(h.vdisp_norm[i] for h in self.hops) / self.n_hops for i in range(len(phase))]
+
+		plt.figure()
+		for h in self.hops:
+			plt.plot(phase, [x / bw for x in h.vgrf_norm], color="gray", alpha=0.3, linewidth=0.8)
+		plt.plot(phase, [x / bw for x in vgrf_mean], color="black", alpha=1.0, linewidth=1.0)
+		plt.xlabel("Stance Phase [%]")
+		plt.ylabel("vGRF [BW]")
+		plt.title("Time-Normalized Vertical GRF")
+		plt.savefig(outdir + "F-t.png", dpi=300)
 		plt.close()
 
 		plt.figure()
 		for h in self.hops:
-			plt.plot([x * 100 for x in h.time_norm], [x / (h.mass * G) for x in h.vgrf_norm])
-		plt.xlabel("Hop phase [%]")
+			plt.plot(h.vdisp_norm, [x / bw for x in h.vgrf_norm], color="gray", alpha=0.3, linewidth=0.8)
+		plt.plot(vdisp_mean, [x / bw for x in vgrf_mean], color="black", alpha=1.0, linewidth=1.0)
+		plt.xlabel("Vertical Displacement [m]")
 		plt.ylabel("vGRF [BW]")
-		plt.title("F-t graph")
-		plt.savefig(outdir + "F-t.png", dpi = 300)
+		plt.title("Time-Normalized Vertical GRF-Displacement Relationship")		
+		plt.savefig(outdir + "F-x.png", dpi=300)	
 		plt.close()
 
-		plt.figure()
-		for h in self.hops:
-			plt.plot(h.vdisp, [x / (h.mass * G) for x in h.vgrf])
-		plt.xlabel("Vertical displacement [m]")
-		plt.ylabel("vGRF [BW]")
-		plt.title("F-x graph")		
-		plt.savefig(outdir + "F-x.png", dpi = 300)	
-		plt.close()
+		# summary.csvを出力する。(freq, gct, max_vgrf, max_vdisp, n_hops, k_vert)(統計量(平均)と個別)

@@ -1,8 +1,7 @@
 from hopping_analysis import HoppingAnalysis
 import matplotlib.pyplot as plt
 
-dirpath = "../figs_eular/"
+dirpath = "../figs"
 
-h = HoppingAnalysis("../data/inplace_PF.csv")
-print(h.hops[0].vdisp)
-# h.analyze(dirpath)
+a = HoppingAnalysis("../data/inplace_PF.csv", "../data/mass.csv")
+a.analyze(dirpath)
