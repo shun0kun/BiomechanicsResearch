@@ -1,7 +1,10 @@
 import csv
 import matplotlib.pyplot as plt
+import os
 from . import utils
 from .Hop import Hop
+
+G = 9.81
 
 class HoppingAnalysis:
 	def __init__(self, filepath: str, massdata: int | float | str | None = None) -> None:
@@ -65,5 +68,40 @@ class HoppingAnalysis:
 		return hops
 
 	def analyze(self, outdir: str = "") -> None:
+		if len(outdir) > 0 and outdir[-1] != '/':
+			outdir = outdir + '/'
+		os.makedirs(outdir, exist_ok = True) # ""や"."のときはどうなる？
+
 		plt.figure()
+		plt.plot(self.time, self.vgrf)
+		plt.xlabel("Time [s]")
+		plt.ylabel("vGRF [N]")
+		plt.title("Vertical GRF")
+		plt.savefig(outdir + "vertical_GRF.png")
+		plt.close()
+
+		plt.figure()
+		plt.plot(self.time, self.filtered_vgrf)
+		plt.xlabel("Time [s]")
+		plt.ylabel("vGRF [N]")
+		plt.title("Vertical GRF (filtered)")
+		plt.savefig(outdir + "filtered_vertical_GRF.png")
+		plt.close()
+
+		plt.figure()
+		for h in self.hops:
+			plt.plot([x * 100 for x in h.time_norm], [x / (h.mass * G) for x in h.vgrf_norm])
+		plt.xlabel("Hop phase [%]")
+		plt.ylabel("vGRF [BW]")
+		plt.title("F-t graph")
+		plt.savefig(outdir + "F-t.png", dpi = 300)
+		plt.close()
+
+		plt.figure()
+		for h in self.hops:
+			plt.plot(h.vdisp, [x / (h.mass * G) for x in h.vgrf])
+		plt.xlabel("Vertical displacement [m]")
+		plt.ylabel("vGRF [BW]")
+		plt.title("F-x graph")		
+		plt.savefig(outdir + "F-x.png", dpi = 300)	
 		plt.close()
