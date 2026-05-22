@@ -6,15 +6,17 @@ G = 9.81
 
 class Hop:
 	def __init__(self, mass: float, time: list[float], vgrf: list[float]) -> None:
+		self.is_valid = True
 		self.mass = mass
+		self.global_time = time
 		self.time = [t - time[0] for t in time]
 		self.vgrf = vgrf
 		self.vdisp = self._compute_vdisp()
 		self.time_norm, self.vgrf_norm = utils.time_normalize(time, vgrf)
 		_, self.vdisp_norm = utils.time_normalize(time, self.vdisp)
+		self.gct = time[-1] - time[0]
 		self.vgrf_max = max(vgrf)
 		self.freq = self._compute_freq()
-		self.gct = time[-1] - time[0]
 		self.vstiffness = self._compute_vstiffness()
 
 	# 鉛直下向きを正とする
