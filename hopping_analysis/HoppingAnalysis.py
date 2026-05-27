@@ -16,7 +16,7 @@ class HoppingAnalysis:
 		self.filtered_vgrf = self._filter_vgrf()
 		self.hops = self._extract_hops()
 		self.n_valid_hops = len(self.hops)
-		self.gct_mean, self.vgrf_max_mean, self.freq_mean, self.vstiffness_mean, self.gct_se, self.freq_se, self.vstiffness_se = self._calc_statistics()
+		self.freq_mean, self.gct_mean, self.vgrf_max_mean, self.vstiffness_mean = self._calc_statistics()
 
 	def _resolve_mass(self, massdata: int | float | str | None) -> float:
 		if isinstance(massdata, (int, float)):
@@ -97,35 +97,37 @@ class HoppingAnalysis:
 		self.invalidate_hops(range(len(self.hops)))
 		self.validate_hops(ids)
 
-	def _calc_statistics(self) -> tuple[float, float, float, float, float, float, float]:
+	def _compute_freq_mean(self) -> float | None:
+		periods = []
+		for i in range(len(self.hops) - 1):
+			if self.hops[i].is_valid and self.hops[i + 1].is_valid:
+				periods.append(self.hops[i + 1].global_time[0] - self.hops[i].global_time[0])
+		if not periods:
+			return None
+		freqs = [1 / x for x in periods]
+		freq_mean = numpy.mean(freqs)
+		return float(freq_mean)
+
+	def _calc_statistics(self) -> tuple[float, float, float, float]:
 		if self.n_valid_hops >= 2:
+			freq_mean = self._compute_freq_mean()
 			gct_mean = sum(h.gct for h in self.hops if h.is_valid) / self.n_valid_hops
 			vgrf_max_mean = sum(h.vgrf_max for h in self.hops if h.is_valid) / self.n_valid_hops
-			freq_mean = sum(h.freq for h in self.hops if h.is_valid) / self.n_valid_hops
 			vstiffness_mean = sum(h.vstiffness for h in self.hops if h.is_valid) / self.n_valid_hops
-			gct_se = numpy.std([h.gct for h in self.hops if h.is_valid], ddof=1) / numpy.sqrt(self.n_valid_hops)
-			freq_se = numpy.std([h.freq for h in self.hops if h.is_valid], ddof=1) / numpy.sqrt(self.n_valid_hops)
-			vstiffness_se = numpy.std([h.vstiffness for h in self.hops if h.is_valid], ddof=1) / numpy.sqrt(self.n_valid_hops)
 		elif self.n_valid_hops == 1:
-			gct_mean = self.hops[0].gct
-			vgrf_max_mean = self.hops[0].vgrf_max
-			freq_mean = self.hops[0].freq
-			vstiffness_mean = self.hops[0].vstiffness
-			gct_se = None
-			freq_se = None
-			vstiffness_se = None
+			freq_mean = None
+			gct_mean = sum(h.gct for h in self.hops if h.is_valid) / self.n_valid_hops
+			vgrf_max_mean = sum(h.vgrf_max for h in self.hops if h.is_valid) / self.n_valid_hops
+			vstiffness_mean = sum(h.vstiffness for h in self.hops if h.is_valid) / self.n_valid_hops
 		else:
+			freq_mean = None
 			gct_mean = None
 			vgrf_max_mean = None
-			freq_mean = None
 			vstiffness_mean = None
-			gct_se = None
-			freq_se = None
-			vstiffness_se = None
-		return gct_mean, vgrf_max_mean, freq_mean, vstiffness_mean, gct_se, freq_se, vstiffness_se
+		return freq_mean, gct_mean, vgrf_max_mean, vstiffness_mean
 
 	def _reanalize(self) -> None:
-		self.gct_mean, self.vgrf_max_mean, self.freq_mean, self.vstiffness_mean, self.gct_se, self.freq_se, self.vstiffness_se = self._calc_statistics()
+		self.freq, self.gct_mean, self.vgrf_max_mean, self.vstiffness_mean = self._calc_statistics()
 
 	def export_analysis(self, outdir: str = "") -> None:
 		if len(outdir) > 0 and outdir[-1] != '/':
@@ -181,8 +183,12 @@ class HoppingAnalysis:
 
 		plt.figure()
 		for h in valid_hops:
-			plt.plot(h.vdisp_norm, [x / bw for x in h.vgrf_norm], color="gray", alpha=0.3, linewidth=0.8)
-		plt.plot(vdisp_mean, [x / bw for x in vgrf_mean], color="black", alpha=1.0, linewidth=1.0)
+			i_bottom = h.vdisp_norm.index(max(h.vdisp_norm))
+			plt.plot(h.vdisp_norm[i_bottom:], [x / bw for x in h.vgrf_norm[i_bottom:]], color="gray", alpha=0.3, linewidth=0.8)
+			plt.plot(h.vdisp_norm[0:i_bottom + 1], [x / bw for x in h.vgrf_norm[0:i_bottom + 1]], color="gray", alpha=0.3, linewidth=0.8)
+		i_bottom = vdisp_mean.index(max(vdisp_mean))
+		plt.plot(vdisp_mean[i_bottom:], [x / bw for x in vgrf_mean[i_bottom:]], color="black", alpha=1.0, linewidth=1.0)
+		plt.plot(vdisp_mean[0:i_bottom + 1], [x / bw for x in vgrf_mean[0:i_bottom + 1]], color="black", alpha=1.0, linewidth=1.0)
 		plt.xlabel("Vertical Displacement [m]")
 		plt.ylabel("vGRF [BW]")
 		plt.title("Time-Normalized Vertical GRF-Displacement Relationship")		

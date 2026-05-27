@@ -16,7 +16,6 @@ class Hop:
 		_, self.vdisp_norm = utils.time_normalize(time, self.vdisp)
 		self.gct = time[-1] - time[0]
 		self.vgrf_max = max(vgrf)
-		self.freq = self._compute_freq()
 		self.vstiffness = self._compute_vstiffness()
 
 	# 鉛直下向きを正とする
@@ -52,19 +51,19 @@ class Hop:
 			vdisp[i + 1] = vdisp[i] + vvel[i] * (self.time[i + 1] - self.time[i])
 		return vdisp
 
-	# 未定義動作あり
-	def _compute_freq(self) -> float:
+	# 未定義動作あり。vgrf_max < bwのとき、tが空になる。bw以上のvgrf要素数が1でも0devideになる。最低連続した2要素必要。
+	def _compute_vstiffness(self) -> float | None:
 		t = []
 		bw = self.mass * G
 		for i in range(len(self.vgrf)):
 			if self.vgrf[i] >= bw:
 				t.append(self.time[i])
-		period = (t[-1] - t[0]) * 2.0
-		freq = 1.0 / period
-		return freq
-
-	def _compute_vstiffness(self) -> float:
-		return self.mass * (2 * numpy.pi * self.freq) ** 2.0
+		if len(t) < 2:
+			self.is_valid = False
+			return None
+		period = (t[-1] - t[0]) * 2.0	
+		omega = 2.0 * numpy.pi / period 
+		return self.mass * omega ** 2.0
 	
 	def fx_fig(self, path: str) -> None:
 		bw = self.mass * G

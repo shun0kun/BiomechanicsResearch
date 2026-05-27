@@ -1,4 +1,4 @@
-#!/home/shunsuke/Research/scripts/.venv/bin/python3
+#!/mnt/share/vm_shared/scripts/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
